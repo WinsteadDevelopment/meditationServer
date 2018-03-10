@@ -12,6 +12,11 @@ app.get('/', (req, res) => {
   res.json('Meditation App Test');
 });
 
+app.post('/tokens', (req, res) =>{
+  console.log('push token: ', req.body);
+  res.status(201).send('token received')
+});
+
 app.listen(port, () => {
   console.log(`App is listening on ${port}`);
 });
