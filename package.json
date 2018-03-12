@@ -22,6 +22,9 @@
     "body-parser": "^1.18.2",
     "dotenv": "^5.0.1",
     "expo-server-sdk": "^2.3.3",
-    "express": "^4.16.2"
+    "express": "^4.16.2",
+    "jsonwebtoken": "^8.2.0",
+    "passport": "^0.4.0",
+    "passport-jwt": "^3.0.1"
   }
 }
