@@ -21,6 +21,7 @@
   "dependencies": {
     "body-parser": "^1.18.2",
     "dotenv": "^5.0.1",
+    "expo-server-sdk": "^2.3.3",
     "express": "^4.16.2"
   }
 }
