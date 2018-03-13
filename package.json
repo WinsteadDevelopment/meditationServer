@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,6 +23,8 @@
     "dotenv": "^5.0.1",
     "expo-server-sdk": "^2.3.3",
     "express": "^4.16.2",
-    "mongoose": "^5.0.9"
+    "jsonwebtoken": "^8.2.0",
+    "passport": "^0.4.0",
+    "passport-jwt": "^3.0.1"
   }
 }

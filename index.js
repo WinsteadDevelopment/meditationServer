@@ -5,6 +5,8 @@ require('dotenv').config();
 
 const express = require('express');
 const bodyParser = require ('body-parser');
+const passport = require('passport');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 9000;
 
 const app = express();
@@ -18,39 +20,56 @@ const Users = mongoose.model('users', { users: Array});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(passport.initialize());
+app.use(passport.session());
+const users = {};
+let latestId = 0;
+
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
+var opts = {};
+opts.jwtFromRequest = ExtractJwt.fromHeader('authorization'),
+opts.secretOrKey = 'secret';
+// opts.issuer = 'accounts.examplesoft.com';
+// opts.audience = 'yoursite.net';
+passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
+  // const user = users[jwt_payload.sub];
+  const user = users[jwt_payload.id];
+  return done(null, user);
+  // user.findOne({ id: jwt_payload.sub }, (err, user) => {
+  //   if (err) {
+  //     return done(err, false);
+  //   }
+  //   if (user) {
+  //     return done(null, user);
+  //   } else {
+  //     return done(null, false);
+  //     // or you could create a new account
+  //   }
+  // });
+}));
 
 app.get('/', (req, res) => {
   res.json('Meditation App Test');
 });
 
-app.get('/affirmations', (req, res) => {
-  mongoose.model('affirmations').find({}, (err, affirmations) => {
-    if(err){
-      console.error(err);
-    }
-    res.status(200).send(affirmations);
-  });
+app.post('/signup', (req, res) => {
+  users[latestId] = req.body;
+  const tokenData = {
+    id: latestId,
+    username: req.body.username,
+    password: req.body.password
+  };
+  const token = jwt.sign(tokenData, 'secret');
+  latestId++;
+  res.json(token);
 });
 
-app.post('/login', (req, res) => {
-  //successful login currently is username: "user", password: "password"
-  mongoose.model('users').find({}, (err, users) => {
-    if(err){
-      console.error(err);
-    }else{
-      for(let i=0; i<users.length; i++){
-        if(users[i].username === req.body.username && users[i].password === req.body.password){
-          res.status(201).send('user login successful');
-        }else{
-          res.status(201).send('user not found');
-        }
-      }
-    }
-  });
+app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
+  res.send(JSON.stringify(req.user));
 })
 
 app.post('/tokens', (req, res) =>{
-  console.log('push token: ', req.body);
   let messages = [];
   let somePushTokens = [];
   somePushTokens.push(req.body.token.value);
