@@ -16,7 +16,7 @@ const expo = new Expo();
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
-const Users = mongoose.model('users', { id: Number, username: String, password: String});
+const Users = mongoose.model('users', { id: Number, username: String, password: String });
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -81,7 +81,7 @@ app.post('/signin', (req, res) => {
         res.send('Sorry, that password was incorrect');
       } else {
         const tokenData = {
-          id: user.id,
+          id: user._id,
           username: user.username,
         };
         const token = jwt.sign(tokenData, 'secret');
