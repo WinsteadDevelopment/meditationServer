@@ -24,6 +24,7 @@
     "expo-server-sdk": "^2.3.3",
     "express": "^4.16.2",
     "jsonwebtoken": "^8.2.0",
+    "mongoose": "^5.0.10",
     "passport": "^0.4.0",
     "passport-jwt": "^3.0.1"
   }
