@@ -60,7 +60,6 @@ app.post('/signup', (req, res) => {
             res.status(400).send('there was an error creating the user');
           } else {
             tokenData._id = createdUser._id;
-            console.log('createdUser: ', createdUser);
             const token = jwt.sign(tokenData, 'secret');
             res.status(201).send(token);
           }
