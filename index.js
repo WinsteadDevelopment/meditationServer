@@ -1,4 +1,5 @@
 const Expo = require('expo-server-sdk');
+const mongoose = require('mongoose');
 
 require('dotenv').config();
 
@@ -10,11 +11,24 @@ const app = express();
 
 const expo = new Expo();
 
+mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
+
+const Affirmations = mongoose.model('affirmations', { affirmations: Array });
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
   res.json('Meditation App Test');
+});
+
+app.get('/affirmations', (req, res) => {
+  mongoose.model('affirmations').find({}, (err, affirmations) => {
+    if(err){
+      console.error(err);
+    }
+    res.status(200).send(affirmations);
+  });
 });
 
 app.post('/tokens', (req, res) =>{
