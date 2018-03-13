@@ -59,6 +59,10 @@ app.post('/signup', (req, res) => {
   res.json(token);
 });
 
+app.post('/signin', (req, res) => {
+  res.status(201).send('success');
+});
+
 app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.send(JSON.stringify(req.user));
 })
