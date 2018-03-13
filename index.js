@@ -16,14 +16,12 @@ const expo = new Expo();
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
-const Users = mongoose.model('users', { id: Number, username: String, password: String});
+const Users = mongoose.model('users', { username: String, password: String, completions: Number});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(passport.session());
-const users = {};
-let latestId = 0;
 
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
@@ -47,22 +45,22 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-  users[latestId] = req.body;
   const tokenData = {
-    id: latestId,
     username: req.body.username,
-    password: req.body.password
+    password: req.body.password,
+    completions: 0,
   };
   Users.findOne({ username: req.body.username })
     .then((results) => {
       if (results === null) {
         const user = new Users(tokenData);
-        user.save(err =>{
+        user.save((err, createdUser) =>{
           if (err) {
             console.error(err);
             res.status(400).send('there was an error creating the user');
           } else {
-            console.log(`${tokenData.username} added successfully`);
+            tokenData._id = createdUser._id;
+            console.log('createdUser: ', createdUser);
             const token = jwt.sign(tokenData, 'secret');
             res.status(201).send(token);
           }
@@ -71,7 +69,6 @@ app.post('/signup', (req, res) => {
         res.status(401).send('Sorry, a user with that name already exists');
       }
     })
-  latestId++;
 });
 
 app.post('/signin', (req, res) => {
@@ -141,6 +138,10 @@ app.post('/tokens', (req, res) =>{
     }
   })();
   res.status(201).send('token received')
+});
+
+app.post('/journal', (req, res) => {
+  console.log('req.body', req.body);
 });
 
 app.listen(port, () => {
