@@ -60,19 +60,22 @@ app.post('/signup', (req, res) => {
     username: req.body.username,
     password: req.body.password
   };
-  console.log('tokenData: ', tokenData);
   const user = new Users(tokenData);
   user.save(err =>{
-    if(err){
+    if (err) {
       console.error(err);
-    }else{
+      res.status(400).send('there was an error creating the user');
+    } else {
       console.log(`${tokenData.username} added successfully`);
-      res.status(201).send('user added successfully');
+      const token = jwt.sign(tokenData, 'secret');
+      res.status(201).send(token);
     }
   })
-  const token = jwt.sign(tokenData, 'secret');
   latestId++;
-  res.json(token);
+});
+
+app.post('/signin', (req, res) => {
+  res.status(201).send('success');
 });
 
 app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
