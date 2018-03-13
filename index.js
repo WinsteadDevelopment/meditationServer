@@ -16,7 +16,7 @@ const expo = new Expo();
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
-const Users = mongoose.model('users', { id: Number, username: String, password: String});
+const Users = mongoose.model('users', { id: Number, username: String, password: String, completions: Number});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -58,7 +58,8 @@ app.post('/signup', (req, res) => {
   const tokenData = {
     id: latestId,
     username: req.body.username,
-    password: req.body.password
+    password: req.body.password,
+    completions: 0,
   };
   const user = new Users(tokenData);
   user.save(err =>{
