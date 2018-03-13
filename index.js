@@ -55,7 +55,6 @@ app.post('/signup', (req, res) => {
   };
   Users.findOne({ username: req.body.username })
     .then((results) => {
-      console.log(results);
       if (results === null) {
         const user = new Users(tokenData);
         user.save(err =>{
