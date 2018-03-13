@@ -30,23 +30,16 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 var opts = {};
 opts.jwtFromRequest = ExtractJwt.fromHeader('authorization'),
 opts.secretOrKey = 'secret';
-// opts.issuer = 'accounts.examplesoft.com';
-// opts.audience = 'yoursite.net';
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
-  // const user = users[jwt_payload.sub];
-  const user = users[jwt_payload.id];
-  return done(null, user);
-  // user.findOne({ id: jwt_payload.sub }, (err, user) => {
-  //   if (err) {
-  //     return done(err, false);
-  //   }
-  //   if (user) {
-  //     return done(null, user);
-  //   } else {
-  //     return done(null, false);
-  //     // or you could create a new account
-  //   }
-  // });
+  Users.findOne({ username: jwt_payload.username }, (err, user) => {
+    if (err) {
+      return done(err, false);
+    } else if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  });
 }));
 
 app.get('/', (req, res) => {
@@ -60,24 +53,45 @@ app.post('/signup', (req, res) => {
     username: req.body.username,
     password: req.body.password
   };
-  const user = new Users(tokenData);
-  user.save(err =>{
-    if (err) {
-      console.error(err);
-      res.status(400).send('there was an error creating the user');
-    } else {
-      console.log(`${tokenData.username} added successfully`);
-      const token = jwt.sign(tokenData, 'secret');
-      res.status(201).send(token);
-    }
-  })
+  Users.findOne({ username: req.body.username })
+    .then((results) => {
+      if (results === null) {
+        const user = new Users(tokenData);
+        user.save(err =>{
+          if (err) {
+            console.error(err);
+            res.status(400).send('there was an error creating the user');
+          } else {
+            console.log(`${tokenData.username} added successfully`);
+            const token = jwt.sign(tokenData, 'secret');
+            res.status(201).send(token);
+          }
+        })
+      } else {
+        res.status(401).send('Sorry, a user with that name already exists');
+      }
+    })
   latestId++;
 });
 
 app.post('/signin', (req, res) => {
-  res.status(201).send('success');
+  Users.findOne({ username: req.body.username })
+    .then((user) => {
+      if (user.password !== req.body.password) {
+        res.send('Sorry, that password was incorrect');
+      } else {
+        const tokenData = {
+          id: user.id,
+          username: user.username,
+        };
+        const token = jwt.sign(tokenData, 'secret');
+        res.status(201).send(token);
+      }
+    })
+    .catch((err) => res.status(404).send(err));
 });
 
+// Just a test route to see that auth is working correctly
 app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.send(JSON.stringify(req.user));
 })
