@@ -17,6 +17,7 @@ mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
 const Users = mongoose.model('users', { username: String, password: String, completions: Number});
+const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -139,9 +140,27 @@ app.post('/tokens', (req, res) =>{
   res.status(201).send('token received')
 });
 
-app.post('/journal', (req, res) => {
+app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) => {
   console.log('req.body', req.body);
+  console.log('req.user', req.user);
+  const entry = new Journals({
+    userId: req.user._id,
+    entry: req.body.entry,
+    date: req.body.date.dateString,
+  });
+  entry.save((err, savedEntry) => {
+    if(err){
+      console.error(err);
+      res.status(400).send('there was an error in saving the journal entry');
+    }else{
+      res.status(201).send('entry saved successfully');
+    }
+  });
 });
+
+// app.get('/protected', passport.authenticate('jwt', {session: false}), (req, res) => {
+//   res.send(JSON.stringify(req.user));
+// })
 
 app.listen(port, () => {
   console.log(`App is listening on ${port}`);
