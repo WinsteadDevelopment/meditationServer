@@ -16,7 +16,7 @@ const expo = new Expo();
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
-const Users = mongoose.model('users', { users: Array});
+const Users = mongoose.model('users', { id: Number, username: String, password: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -60,6 +60,16 @@ app.post('/signup', (req, res) => {
     username: req.body.username,
     password: req.body.password
   };
+  console.log('tokenData: ', tokenData);
+  const user = new Users(tokenData);
+  user.save(err =>{
+    if(err){
+      console.error(err);
+    }else{
+      console.log(`${tokenData.username} added successfully`);
+      res.status(201).send('user added successfully');
+    }
+  })
   const token = jwt.sign(tokenData, 'secret');
   latestId++;
   res.json(token);
