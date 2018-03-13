@@ -14,6 +14,7 @@ const expo = new Expo();
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
+const Users = mongoose.model('users', { users: Array});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -30,6 +31,23 @@ app.get('/affirmations', (req, res) => {
     res.status(200).send(affirmations);
   });
 });
+
+app.post('/login', (req, res) => {
+  //successful login currently is username: "user", password: "password"
+  mongoose.model('users').find({}, (err, users) => {
+    if(err){
+      console.error(err);
+    }else{
+      for(let i=0; i<users.length; i++){
+        if(users[i].username === req.body.username && users[i].password === req.body.password){
+          res.status(201).send('user login successful');
+        }else{
+          res.status(201).send('user not found');
+        }
+      }
+    }
+  });
+})
 
 app.post('/tokens', (req, res) =>{
   console.log('push token: ', req.body);
