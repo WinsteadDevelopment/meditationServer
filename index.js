@@ -1,3 +1,5 @@
+// import { create } from 'domain';
+
 const Expo = require('expo-server-sdk');
 const mongoose = require('mongoose');
 
@@ -17,6 +19,7 @@ mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
 const Users = mongoose.model('users', { username: String, password: String, completions: Number});
+const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -71,6 +74,33 @@ app.post('/signup', (req, res) => {
     })
 });
 
+app.get('/todo', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const userId = req.user._id;
+  const date = req.headers.date;
+  Todos.find({ userId, date })
+    .then((results) => {
+      console.log(results);
+      res.status(200).send(results);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
+    });
+});
+
+app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const todoData = { userId: req.user._id, item: req.body.todo, date: req.body.date };
+  const todo = new Todos(todoData);
+  todo.save((err, createdTodo) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send(err);
+    } else {
+      res.status(201).send(createdTodo);
+    }
+  })
+});
+
 app.post('/signin', (req, res) => {
   Users.findOne({ username: req.body.username })
     .then((user) => {
@@ -85,7 +115,10 @@ app.post('/signin', (req, res) => {
         res.status(201).send(token);
       }
     })
-    .catch((err) => res.status(404).send(err));
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
+    });
 });
 
 // Just a test route to see that auth is working correctly
