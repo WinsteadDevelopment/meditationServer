@@ -153,7 +153,18 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
       console.error(err);
       res.status(400).send('there was an error in saving the journal entry');
     }else{
-      res.status(201).send('entry saved successfully');
+      Users.findById(req.user._id, (err, user) =>{
+        if(err){
+          console.error(err);
+          res.status(500).send(err);
+        }else{
+          user.completions = ++user.completions;
+          user.save((err, updatedUser) =>{
+            console.log('updated user: ', updatedUser);
+            res.status(201).send(`journal entry for ${updatedUser.username} saved`);
+          })
+        }
+      })
     }
   });
 });
