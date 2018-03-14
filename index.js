@@ -89,8 +89,14 @@ app.post('/signin', (req, res) => {
 });
 
 // Just a test route to see that auth is working correctly
-app.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
-  res.send(JSON.stringify(req.user));
+app.get('/userCompletions', passport.authenticate('jwt', { session: false }), (req, res) => {
+  Users.findById(req.user._id, (err, user) =>{
+    if(err){
+      console.error(err);
+    }else{
+      res.status(200).send(`${user.completions}`);
+    }
+  });
 })
 
 app.post('/tokens', (req, res) =>{
