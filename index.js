@@ -1,5 +1,3 @@
-// import { create } from 'domain';
-
 const Expo = require('expo-server-sdk');
 const mongoose = require('mongoose');
 
@@ -10,6 +8,7 @@ const bodyParser = require ('body-parser');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 9000;
+const dateFormat = require('dateformat');
 
 const app = express();
 
@@ -18,6 +17,7 @@ const expo = new Expo();
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
+const Adjectives = mongoose.model('adjectives', { adjectives: Array });
 const Users = mongoose.model('users', { username: String, password: String, completions: Number});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
@@ -79,7 +79,7 @@ app.get('/todo', passport.authenticate('jwt', { session: false }), (req, res) =>
   const date = req.headers.date;
   Todos.find({ userId, date })
     .then((results) => {
-      console.log(results);
+      // console.log(results);
       res.status(200).send(results);
     })
     .catch((err) => {
@@ -170,7 +170,7 @@ app.post('/tokens', (req, res) =>{
     for (let chunk of chunks) {
       try {
         let receipts = await expo.sendPushNotificationsAsync(chunk);
-        console.log(receipts);
+        // console.log(receipts);
       } catch (error) {
         console.error(error);
       }
@@ -180,8 +180,8 @@ app.post('/tokens', (req, res) =>{
 });
 
 app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) => {
-  console.log('req.body', req.body);
-  console.log('req.user', req.user);
+  // console.log('req.body', req.body)
+  // console.log('req.user', req.user);
   const entry = new Journals({
     userId: req.user._id,
     entry: req.body.entry,
@@ -199,13 +199,43 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
         }else{
           user.completions = ++user.completions;
           user.save((err, updatedUser) =>{
-            console.log('updated user: ', updatedUser);
+            // console.log('updated user: ', updatedUser);
             res.status(201).send(`journal entry for ${updatedUser.username} saved`);
           })
         }
       })
     }
   });
+});
+
+app.get('/affirmations', 
+// passport.authenticate('jwt', { session: false }), 
+(req, res) => {
+  Affirmations.find()
+    .then((results) => {
+      let now = new Date();
+      let dayOfTheMonth = dateFormat(now, "d");
+      // console.log(dayOfTheMonth);
+      res.status(200).send(results[0].affirmations[dayOfTheMonth-1]);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
+    });
+});
+
+app.get('/adjectives', 
+// passport.authenticate('jwt', { session: false }), 
+(req, res) => {
+  Adjectives.find()
+    .then((results) => {
+      let randomAdjective = Math.floor(Math.random() * results[0].adjectives.length);
+      res.status(200).send(results[0].adjectives[randomAdjective]);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
+    });
 });
 
 // app.get('/protected', passport.authenticate('jwt', {session: false}), (req, res) => {
