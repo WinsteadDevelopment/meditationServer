@@ -216,7 +216,21 @@ app.get('/affirmations',
       let now = new Date();
       let dayOfTheMonth = dateFormat(now, "d");
       // console.log(dayOfTheMonth);
-      res.status(200).send(results[0].affirmations[dayOfTheMonth]);
+      res.status(200).send(results[0].affirmations[dayOfTheMonth-1]);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
+    });
+});
+
+app.get('/adjectives', 
+// passport.authenticate('jwt', { session: false }), 
+(req, res) => {
+  Adjectives.find()
+    .then((results) => {
+      let randomAdjective = Math.floor(Math.random() * results[0].adjectives.length);
+      res.status(200).send(results[0].adjectives[randomAdjective]);
     })
     .catch((err) => {
       console.error(err);
