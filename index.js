@@ -211,7 +211,7 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
 //change comment for heroku
 
 app.get('/affirmations', 
-// passport.authenticate('jwt', { session: false }), 
+passport.authenticate('jwt', { session: false }), 
 (req, res) => {
   Affirmations.find()
     .then((results) => {
@@ -227,7 +227,7 @@ app.get('/affirmations',
 });
 
 app.get('/adjectives', 
-// passport.authenticate('jwt', { session: false }), 
+passport.authenticate('jwt', { session: false }), 
 (req, res) => {
   Adjectives.find()
     .then((results) => {
