@@ -208,6 +208,8 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
   });
 });
 
+//change comment for heroku
+
 app.get('/affirmations', 
 // passport.authenticate('jwt', { session: false }), 
 (req, res) => {
