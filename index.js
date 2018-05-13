@@ -51,31 +51,29 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signin', (req, res) => {
-  bcrypt.genSalt(saltRounds, function(err, salt) {
-    bcrypt.hash(myPlaintextPassword, salt, function(err, hash) {
-      if(err){
-        console.error("Bcrypt encountered an error when hashing");
-      }else{
-        Users.findOne({ username: req.body.username })
-        .then((user) => {
-          if (user.password !== hash) {
-            res.send('Sorry, that password was incorrect');
-          } else {
-            const tokenData = {
-              id: user._id,
-              username: user.username,
-            };
-            const token = jwt.sign(tokenData, 'secret');
-            res.status(201).send(token);
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          res.status(404).send(err);
-        });
-      }  
+  console.log('/signin route hit');
+  Users.findOne({ username: req.body.username })
+    .then((user) => {
+      console.log('user found');
+      bcrypt.compare(req.body.password, user.password, function(err, match) {
+        if(err){
+          console.error("Bcrypt encounterd an error comparing passwords");
+          res.send('Sorry, that password was incorrect');
+        }else{
+          const tokenData = {
+            id: user._id,
+            username: user.username,
+          };
+          console.log('user sign in successful');
+          const token = jwt.sign(tokenData, 'secret');
+          res.status(201).send(token);
+        }
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
     });
-  });
 });
 
 app.post('/signup', (req, res) => {
@@ -92,6 +90,7 @@ app.post('/signup', (req, res) => {
           const tokenData = {
             username: req.body.username,
             password: hash,
+            email: req.body.email
           };
           Users.findOne({ username: req.body.username })
             .then((results) => {
