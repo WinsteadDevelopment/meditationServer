@@ -14,6 +14,7 @@ const app = express();
 
 const expo = new Expo();
 
+
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
@@ -49,6 +50,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
+  console.log('Hit the signup route')
+  console.log(req, "this is signup req");
   const tokenData = {
     username: req.body.username,
     password: req.body.password,
@@ -102,8 +105,12 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
 });
 
 app.post('/signin', (req, res) => {
+  console.log("hit the sign in route")
+  console.log(req.body.rememberMe)
   Users.findOne({ username: req.body.username })
     .then((user) => {
+      console.log(user, "this is user")
+      console.log(req.body.username, "this is body user")
       if (user.password !== req.body.password) {
         res.send('Sorry, that password was incorrect');
       } else {
@@ -112,7 +119,7 @@ app.post('/signin', (req, res) => {
           username: user.username,
         };
         const token = jwt.sign(tokenData, 'secret');
-        res.status(201).send(token);
+        res.send({token: token, });
       }
     })
     .catch((err) => {
