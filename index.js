@@ -19,7 +19,7 @@ mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
 const Adjectives = mongoose.model('adjectives', { adjectives: Array });
-const Users = mongoose.model('users', { username: String, password: String, completions: Number});
+const Users = mongoose.model('users', { username: String, password: String, completions: Number, rememberMe: Boolean});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 
@@ -50,8 +50,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-  console.log('Hit the signup route')
-  console.log(req, "this is signup req");
+  //ADD remember me logic
   const tokenData = {
     username: req.body.username,
     password: req.body.password,
@@ -105,7 +104,7 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
 });
 
 app.post('/signin', (req, res) => {
-  console.log("hit the sign in route")
+  //add remember me logic
   console.log(req.body.rememberMe)
   Users.findOne({ username: req.body.username })
     .then((user) => {
@@ -119,7 +118,7 @@ app.post('/signin', (req, res) => {
           username: user.username,
         };
         const token = jwt.sign(tokenData, 'secret');
-        res.send({token: token, });
+        res.send(token);
       }
     })
     .catch((err) => {
