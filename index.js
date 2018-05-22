@@ -16,11 +16,12 @@ const app = express();
 
 const expo = new Expo();
 
+
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
 const Adjectives = mongoose.model('adjectives', { adjectives: Array });
-const Users = mongoose.model('users', { username: String, password: String, completions: Number});
+const Users = mongoose.model('users', { username: String, password: String, completions: Number, rememberMe: Boolean});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 
@@ -142,6 +143,30 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
     }
   })
 });
+
+// app.post('/signin', (req, res) => {
+//   //add remember me logic
+//   console.log(req.body.rememberMe)
+//   Users.findOne({ username: req.body.username })
+//     .then((user) => {
+//       console.log(user, "this is user")
+//       console.log(req.body.username, "this is body user")
+//       if (user.password !== req.body.password) {
+//         res.send('Sorry, that password was incorrect');
+//       } else {
+//         const tokenData = {
+//           id: user._id,
+//           username: user.username,
+//         };
+//         const token = jwt.sign(tokenData, 'secret');
+//         res.send(token);
+//       }
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//       res.status(404).send(err);
+//     });
+// });
 
 // Just a test route to see that auth is working correctly
 app.get('/userCompletions', passport.authenticate('jwt', { session: false }), (req, res) => {
