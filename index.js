@@ -14,11 +14,12 @@ const app = express();
 
 const expo = new Expo();
 
+
 mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33776/meditation`);
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
 const Adjectives = mongoose.model('adjectives', { adjectives: Array });
-const Users = mongoose.model('users', { username: String, password: String, completions: Number});
+const Users = mongoose.model('users', { username: String, password: String, completions: Number, rememberMe: Boolean});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 
@@ -49,6 +50,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
+  //ADD remember me logic
   const tokenData = {
     username: req.body.username,
     password: req.body.password,
@@ -102,8 +104,12 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
 });
 
 app.post('/signin', (req, res) => {
+  //add remember me logic
+  console.log(req.body.rememberMe)
   Users.findOne({ username: req.body.username })
     .then((user) => {
+      console.log(user, "this is user")
+      console.log(req.body.username, "this is body user")
       if (user.password !== req.body.password) {
         res.send('Sorry, that password was incorrect');
       } else {
@@ -112,7 +118,7 @@ app.post('/signin', (req, res) => {
           username: user.username,
         };
         const token = jwt.sign(tokenData, 'secret');
-        res.status(201).send(token);
+        res.send(token);
       }
     })
     .catch((err) => {
