@@ -9,6 +9,8 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 9000;
 const dateFormat = require('dateformat');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const app = express();
 
@@ -49,31 +51,70 @@ app.get('/', (req, res) => {
   res.json('Meditation App Test');
 });
 
-app.post('/signup', (req, res) => {
-  //ADD remember me logic
-  const tokenData = {
-    username: req.body.username,
-    password: req.body.password,
-    completions: 0,
-  };
+app.post('/signin', (req, res) => {
+  console.log('/signin route hit');
   Users.findOne({ username: req.body.username })
-    .then((results) => {
-      if (results === null) {
-        const user = new Users(tokenData);
-        user.save((err, createdUser) =>{
-          if (err) {
-            console.error(err);
-            res.status(400).send('there was an error creating the user');
-          } else {
-            tokenData._id = createdUser._id;
-            const token = jwt.sign(tokenData, 'secret');
-            res.status(201).send(token);
-          }
-        })
-      } else {
-        res.status(401).send('Sorry, a user with that name already exists');
-      }
+    .then((user) => {
+      console.log('user found');
+      bcrypt.compare(req.body.password, user.password, function(err, match) {
+        if(err){
+          console.error("Bcrypt encounterd an error comparing passwords");
+          res.send('Sorry, that password was incorrect');
+        }else{
+          const tokenData = {
+            id: user._id,
+            username: user.username,
+          };
+          console.log('user sign in successful');
+          const token = jwt.sign(tokenData, 'secret');
+          res.status(201).send(token);
+        }
+      });
     })
+    .catch((err) => {
+      console.error(err);
+      res.status(404).send(err);
+    });
+});
+
+app.post('/signup', (req, res) => {
+  
+  //password hashing
+  bcrypt.genSalt(saltRounds, function(err, salt) {
+    bcrypt.hash(req.body.password, salt, function(err, hash) {
+        //bcrypt error
+        if(err){
+          console.error("Bcrypt encountered a problem hashing the password");
+        }
+        //bcrypt successful hash
+        else{
+          const tokenData = {
+            username: req.body.username,
+            password: hash,
+            email: req.body.email
+          };
+          Users.findOne({ username: req.body.username })
+            .then((results) => {
+              //if username doesn't exist, create user
+              if (results === null) {
+                const user = new Users(tokenData);
+                user.save((err, createdUser) =>{
+                  if (err) {
+                    console.error(err);
+                    res.status(400).send('there was an error creating the user');
+                  } else {
+                    tokenData._id = createdUser._id;
+                    const token = jwt.sign(tokenData, 'secret');
+                    res.status(201).send(token);
+                  }
+                })
+              } else {
+                res.status(401).send('Sorry, a user with that name already exists');
+              }
+            })     
+        }
+    });
+  });
 });
 
 app.get('/todo', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -103,29 +144,29 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
   })
 });
 
-app.post('/signin', (req, res) => {
-  //add remember me logic
-  console.log(req.body.rememberMe)
-  Users.findOne({ username: req.body.username })
-    .then((user) => {
-      console.log(user, "this is user")
-      console.log(req.body.username, "this is body user")
-      if (user.password !== req.body.password) {
-        res.send('Sorry, that password was incorrect');
-      } else {
-        const tokenData = {
-          id: user._id,
-          username: user.username,
-        };
-        const token = jwt.sign(tokenData, 'secret');
-        res.send(token);
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(404).send(err);
-    });
-});
+// app.post('/signin', (req, res) => {
+//   //add remember me logic
+//   console.log(req.body.rememberMe)
+//   Users.findOne({ username: req.body.username })
+//     .then((user) => {
+//       console.log(user, "this is user")
+//       console.log(req.body.username, "this is body user")
+//       if (user.password !== req.body.password) {
+//         res.send('Sorry, that password was incorrect');
+//       } else {
+//         const tokenData = {
+//           id: user._id,
+//           username: user.username,
+//         };
+//         const token = jwt.sign(tokenData, 'secret');
+//         res.send(token);
+//       }
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//       res.status(404).send(err);
+//     });
+// });
 
 // Just a test route to see that auth is working correctly
 app.get('/userCompletions', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -214,8 +255,10 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
   });
 });
 
+//change comment for heroku
+
 app.get('/affirmations', 
-// passport.authenticate('jwt', { session: false }), 
+passport.authenticate('jwt', { session: false }), 
 (req, res) => {
   Affirmations.find()
     .then((results) => {
@@ -231,7 +274,7 @@ app.get('/affirmations',
 });
 
 app.get('/adjectives', 
-// passport.authenticate('jwt', { session: false }), 
+passport.authenticate('jwt', { session: false }), 
 (req, res) => {
   Adjectives.find()
     .then((results) => {

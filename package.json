@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/PrestonWinstead/meditationServer#readme",
   "dependencies": {
+    "bcrypt": "^2.0.1",
     "body-parser": "^1.18.2",
     "dateformat": "^3.0.3",
     "dotenv": "^5.0.1",
@@ -30,5 +31,8 @@
     "nodemon": "^1.17.3",
     "passport": "^0.4.0",
     "passport-jwt": "^3.0.1"
+  },
+  "engines": {
+    "node": "9.11.1"
   }
 }
