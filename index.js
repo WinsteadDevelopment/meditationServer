@@ -24,6 +24,7 @@ const Adjectives = mongoose.model('adjectives', { adjectives: Array });
 const Users = mongoose.model('users', { username: String, password: String, completions: Number, rememberMe: Boolean});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
+const Exercise = mongoose.model('exercise', {userID: String, entry: Number, date: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -227,8 +228,9 @@ app.post('/tokens', (req, res) =>{
 });
 
 app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) => {
-  // console.log('req.body', req.body)
-  // console.log('req.user', req.user);
+  console.log('Journal route hit');
+  console.log('req.body', req.body)
+  console.log('req.user', req.user);
   const entry = new Journals({
     userId: req.user._id,
     entry: req.body.entry,
@@ -248,6 +250,36 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
           user.save((err, updatedUser) =>{
             // console.log('updated user: ', updatedUser);
             res.status(201).send(`journal entry for ${updatedUser.username} saved`);
+          })
+        }
+      })
+    }
+  });
+});
+
+app.post('/exercise', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('Exercise Route Hit');
+  console.log('req.body: ', req.body)
+  console.log('req.user: ', req.user);
+  const entry = new Exercise({
+    userId: req.user._id,
+    entry: req.body.entry,
+    date: req.body.date.dateString,
+  });
+  entry.save((err, savedEntry) => {
+    if(err){
+      console.error(err);
+      res.status(400).send('there was an error in saving the exercise log');
+    }else{
+      Users.findById(req.user._id, (err, user) =>{
+        if(err){
+          console.error(err);
+          res.status(500).send(err);
+        }else{
+          user.completions = ++user.completions;
+          user.save((err, updatedUser) =>{
+            // console.log('updated user: ', updatedUser);
+            res.status(201).send(`exercise entry for ${updatedUser.username} saved`);
           })
         }
       })
