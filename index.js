@@ -25,6 +25,7 @@ const Users = mongoose.model('users', { username: String, password: String, comp
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 const Exercise = mongoose.model('exercise', {userID: String, entry: Number, date: String});
+const Water = mongoose.model('water', {userID: String, entry: Number, date: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -280,6 +281,37 @@ app.post('/exercise', passport.authenticate('jwt', {session: false}), (req, res)
           user.save((err, updatedUser) =>{
             // console.log('updated user: ', updatedUser);
             res.status(201).send(`exercise entry for ${updatedUser.username} saved`);
+          })
+        }
+      })
+    }
+  });
+});
+
+app.post('/water', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('Water Route Hit');
+  console.log('req.body: ', req.body)
+  console.log('req.user: ', req.user);
+  const entry = new Water({
+    userID: req.user._id,
+    entry: req.body.entry,
+    date: req.body.date.dateString,
+  });
+  entry.save((err, savedEntry) => {
+    if(err){
+      console.error(err);
+      res.status(400).send('there was an error in saving the water log');
+    }else{
+      console.log('savedEntry: ', savedEntry);
+      Users.findById(req.user._id, (err, user) =>{
+        if(err){
+          console.error(err);
+          res.status(500).send(err);
+        }else{
+          user.completions = ++user.completions;
+          user.save((err, updatedUser) =>{
+            console.log('updated user: ', updatedUser);
+            res.status(201).send(`water entry for ${user.username} saved`);
           })
         }
       })
