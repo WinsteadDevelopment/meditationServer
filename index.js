@@ -25,7 +25,7 @@ const Users = mongoose.model('users', { username: String, password: String, comp
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 const Exercise = mongoose.model('exercise', {userID: String, entry: Number, date: String});
-const Water = mongoose.model('water', {userID: String, entry: Number, date: String});
+const Water = mongoose.model('waters', {userID: String, entry: Number, date: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -37,6 +37,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 var opts = {};
 opts.jwtFromRequest = ExtractJwt.fromHeader('authorization'),
 opts.secretOrKey = 'secret';
+
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
   Users.findOne({ username: jwt_payload.username }, (err, user) => {
     if (err) {
@@ -317,6 +318,20 @@ app.post('/water', passport.authenticate('jwt', {session: false}), (req, res) =>
       })
     }
   });
+});
+
+app.get('/water', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('Get Water Route Hit');
+  console.log('req.user: ', req.user);
+  Water.findOne({'userID': req.user._id}, (err, water) =>{
+    if(err){
+      console.error(err);
+      res.send(err);
+    }else{
+      console.log(water.entry);
+      res.send(water);
+    }
+  })
 });
 
 //change comment for heroku
