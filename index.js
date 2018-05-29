@@ -21,7 +21,7 @@ mongoose.connect(`mongodb://admin:${process.env.DBPASSWORD}@ds133776.mlab.com:33
 
 const Affirmations = mongoose.model('affirmations', { affirmations: Array });
 const Adjectives = mongoose.model('adjectives', { adjectives: Array });
-const Users = mongoose.model('users', { username: String, password: String, completions: Number, rememberMe: Boolean});
+const Users = mongoose.model('users', { username: String, password: String, email: String, completions: Number, rememberMe: Boolean, securityQuestion: String, securityAnswer: String});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
 
@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signin', (req, res) => {
-  console.log('/signin route hit');
+  console.log("in signin")
   Users.findOne({ username: req.body.username })
     .then((user) => {
       console.log('user found');
@@ -64,6 +64,7 @@ app.post('/signin', (req, res) => {
           const tokenData = {
             id: user._id,
             username: user.username,
+            email: user.email,
           };
           console.log('user sign in successful');
           const token = jwt.sign(tokenData, 'secret');
@@ -78,7 +79,7 @@ app.post('/signin', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-  
+
   //password hashing
   bcrypt.genSalt(saltRounds, function(err, salt) {
     bcrypt.hash(req.body.password, salt, function(err, hash) {
@@ -91,7 +92,9 @@ app.post('/signup', (req, res) => {
           const tokenData = {
             username: req.body.username,
             password: hash,
-            email: req.body.email
+            email: req.body.email,
+            securityQuestion: req.body.securityQuestion,
+            securityAnswer: req.body.securityAnswer
           };
           Users.findOne({ username: req.body.username })
             .then((results) => {
@@ -286,6 +289,28 @@ passport.authenticate('jwt', { session: false }),
       res.status(404).send(err);
     });
 });
+
+app.post('/checkSecurityQuestion', (req, res) => {
+  Users.findOne({ email: req.body.email })
+  .then((user) => {
+    console.log(user, "this is user")
+    console.log(user.securityAnswer, "this is user answer")
+    console.log(user.securityQuestion, "this is user question")
+    console.log(user.email, "this is user mail")
+    console.log(req.body.securityAnswer, "this is req.body answer")
+    console.log(req.body.securityQuestion, "this is req.body question")
+    console.log(req.body.email, "this is req.body mail")
+    if (user.securityAnswer === req.body.securityAnswer) {
+      res.send("security answer correct")
+    } else {
+      res.send("security answer wrong")
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    res.status(404).send(err);
+  });
+})
 
 // app.get('/protected', passport.authenticate('jwt', {session: false}), (req, res) => {
 //   res.send(JSON.stringify(req.user));
