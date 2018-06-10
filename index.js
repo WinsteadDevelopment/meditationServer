@@ -24,6 +24,8 @@ const Adjectives = mongoose.model('adjectives', { adjectives: Array });
 const Users = mongoose.model('users', { username: String, password: String, email: String, completions: Number, rememberMe: Boolean, securityQuestion: String, securityAnswer: String});
 const Todos = mongoose.model('todos', { userId: String, item: String, date: String});
 const Journals = mongoose.model('journals', {userId: String, entry: String, date: String});
+const Exercise = mongoose.model('exercise', {userID: String, entry: Number, date: String});
+const Water = mongoose.model('waters', {userID: String, entry: Number, date: String});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -35,6 +37,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 var opts = {};
 opts.jwtFromRequest = ExtractJwt.fromHeader('authorization'),
 opts.secretOrKey = 'secret';
+
 passport.use(new JwtStrategy(opts, (jwt_payload, done) => {
   Users.findOne({ username: jwt_payload.username }, (err, user) => {
     if (err) {
@@ -147,31 +150,6 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
   })
 });
 
-// app.post('/signin', (req, res) => {
-//   //add remember me logic
-//   console.log(req.body.rememberMe)
-//   Users.findOne({ username: req.body.username })
-//     .then((user) => {
-//       console.log(user, "this is user")
-//       console.log(req.body.username, "this is body user")
-//       if (user.password !== req.body.password) {
-//         res.send('Sorry, that password was incorrect');
-//       } else {
-//         const tokenData = {
-//           id: user._id,
-//           username: user.username,
-//         };
-//         const token = jwt.sign(tokenData, 'secret');
-//         res.send(token);
-//       }
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//       res.status(404).send(err);
-//     });
-// });
-
-// Just a test route to see that auth is working correctly
 app.get('/userCompletions', passport.authenticate('jwt', { session: false }), (req, res) => {
   Users.findById(req.user._id, (err, user) =>{
     if(err){
@@ -230,8 +208,9 @@ app.post('/tokens', (req, res) =>{
 });
 
 app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) => {
-  // console.log('req.body', req.body)
-  // console.log('req.user', req.user);
+  console.log('Journal route hit');
+  console.log('req.body', req.body)
+  console.log('req.user', req.user);
   const entry = new Journals({
     userId: req.user._id,
     entry: req.body.entry,
@@ -258,11 +237,85 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
   });
 });
 
-//change comment for heroku
+app.post('/exercise', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('Exercise Route Hit');
+  console.log('req.body: ', req.body)
+  console.log('req.user: ', req.user);
+  const entry = new Exercise({
+    userId: req.user._id,
+    entry: req.body.entry,
+    date: req.body.date.dateString,
+  });
+  entry.save((err, savedEntry) => {
+    if(err){
+      console.error(err);
+      res.status(400).send('there was an error in saving the exercise log');
+    }else{
+      Users.findById(req.user._id, (err, user) =>{
+        if(err){
+          console.error(err);
+          res.status(500).send(err);
+        }else{
+          user.completions = ++user.completions;
+          user.save((err, updatedUser) =>{
+            // console.log('updated user: ', updatedUser);
+            res.status(201).send(`exercise entry for ${updatedUser.username} saved`);
+          })
+        }
+      })
+    }
+  });
+});
 
-app.get('/affirmations', 
-passport.authenticate('jwt', { session: false }), 
-(req, res) => {
+app.post('/water', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('Water Route Hit');
+  console.log('req.body: ', req.body)
+  console.log('req.user: ', req.user);
+  Water.findOne({'userID': req.user._id}, (err, water) => {
+
+  })
+  const entry = new Water({
+    userID: req.user._id,
+    entry: req.body.entry,
+    date: req.body.date.dateString,
+  });
+  entry.save((err, savedEntry) => {
+    if(err){
+      console.error(err);
+      res.status(400).send('there was an error in saving the water log');
+    }else{
+      console.log('savedEntry: ', savedEntry);
+      Users.findById(req.user._id, (err, user) =>{
+        if(err){
+          console.error(err);
+          res.status(500).send(err);
+        }else{
+          user.completions = ++user.completions;
+          user.save((err, updatedUser) =>{
+            console.log('updated user: ', updatedUser);
+            res.status(201).send(`water entry for ${user.username} saved`);
+          })
+        }
+      })
+    }
+  });
+});
+
+app.get('/water', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log('Get Water Route Hit');
+  console.log('req.user: ', req.user);
+  Water.findOne({'userID': req.user._id}, (err, water) =>{
+    if(err){
+      console.error(err);
+      res.send(err);
+    }else{
+      console.log(water.entry);
+      res.send(water);
+    }
+  })
+});
+
+app.get('/affirmations', passport.authenticate('jwt', { session: false }), (req, res) => {
   Affirmations.find()
     .then((results) => {
       let now = new Date();
@@ -276,9 +329,7 @@ passport.authenticate('jwt', { session: false }),
     });
 });
 
-app.get('/adjectives', 
-passport.authenticate('jwt', { session: false }), 
-(req, res) => {
+app.get('/adjectives', passport.authenticate('jwt', { session: false }), (req, res) => {
   Adjectives.find()
     .then((results) => {
       let randomAdjective = Math.floor(Math.random() * results[0].adjectives.length);
