@@ -150,31 +150,6 @@ app.post('/todo', passport.authenticate('jwt', { session: false }), (req, res) =
   })
 });
 
-// app.post('/signin', (req, res) => {
-//   //add remember me logic
-//   console.log(req.body.rememberMe)
-//   Users.findOne({ username: req.body.username })
-//     .then((user) => {
-//       console.log(user, "this is user")
-//       console.log(req.body.username, "this is body user")
-//       if (user.password !== req.body.password) {
-//         res.send('Sorry, that password was incorrect');
-//       } else {
-//         const tokenData = {
-//           id: user._id,
-//           username: user.username,
-//         };
-//         const token = jwt.sign(tokenData, 'secret');
-//         res.send(token);
-//       }
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//       res.status(404).send(err);
-//     });
-// });
-
-// Just a test route to see that auth is working correctly
 app.get('/userCompletions', passport.authenticate('jwt', { session: false }), (req, res) => {
   Users.findById(req.user._id, (err, user) =>{
     if(err){
@@ -296,6 +271,9 @@ app.post('/water', passport.authenticate('jwt', {session: false}), (req, res) =>
   console.log('Water Route Hit');
   console.log('req.body: ', req.body)
   console.log('req.user: ', req.user);
+  Water.findOne({'userID': req.user._id}, (err, water) => {
+
+  })
   const entry = new Water({
     userID: req.user._id,
     entry: req.body.entry,
@@ -337,11 +315,7 @@ app.get('/water', passport.authenticate('jwt', {session: false}), (req, res) => 
   })
 });
 
-//change comment for heroku
-
-app.get('/affirmations', 
-passport.authenticate('jwt', { session: false }), 
-(req, res) => {
+app.get('/affirmations', passport.authenticate('jwt', { session: false }), (req, res) => {
   Affirmations.find()
     .then((results) => {
       let now = new Date();
@@ -355,9 +329,7 @@ passport.authenticate('jwt', { session: false }),
     });
 });
 
-app.get('/adjectives', 
-passport.authenticate('jwt', { session: false }), 
-(req, res) => {
+app.get('/adjectives', passport.authenticate('jwt', { session: false }), (req, res) => {
   Adjectives.find()
     .then((results) => {
       let randomAdjective = Math.floor(Math.random() * results[0].adjectives.length);
