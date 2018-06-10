@@ -79,7 +79,7 @@ app.post('/signin', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-
+  console.log(" in signup")
   //password hashing
   bcrypt.genSalt(saltRounds, function(err, salt) {
     bcrypt.hash(req.body.password, salt, function(err, hash) {
@@ -293,22 +293,44 @@ passport.authenticate('jwt', { session: false }),
 app.post('/checkSecurityQuestion', (req, res) => {
   Users.findOne({ email: req.body.email })
   .then((user) => {
-    console.log(user, "this is user")
-    console.log(user.securityAnswer, "this is user answer")
-    console.log(user.securityQuestion, "this is user question")
-    console.log(user.email, "this is user mail")
-    console.log(req.body.securityAnswer, "this is req.body answer")
-    console.log(req.body.securityQuestion, "this is req.body question")
-    console.log(req.body.email, "this is req.body mail")
-    if (user.securityAnswer === req.body.securityAnswer) {
-      res.send("security answer correct")
-    } else {
-      res.send("security answer wrong")
+    console.log(user.securityQuestion, "this is question")
+      res.send(user.securityQuestion)
+  })
+  .catch((err) => {
+    console.error(err);
+    res.status(404).send(err);
+  });
+})
+
+app.post('/checkSecurityAnswer', (req, res) => {
+  Users.findOne({ email: req.body.email })
+  .then((user) => {
+    console.log(user, req.body.answer)
+    if(user.securityAnswer === req.body.answer)
+    {
+      console.log("correct")
+      res.send("correct")
+    }
+    else {
+      res.send("incorrect")
     }
   })
   .catch((err) => {
     console.error(err);
     res.status(404).send(err);
+  });
+})
+
+app.post('/resetPassword', (req, res) => {
+  Users.findOneAndUpdate({ email: req.body.email }, {password: req.body.newPassword}, {new: true}, function(err, user){
+    if(err){
+        console.log("Something wrong when updating data!");
+        res.send("incorrect")
+    }
+    else if (user.password === req.body.newPassword) {
+      console.log("updated")
+      res.send("updated")
+    }
   });
 })
 
