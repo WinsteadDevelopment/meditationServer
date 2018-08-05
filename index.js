@@ -12,6 +12,8 @@ const dateFormat = require('dateformat');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
+const { getDate } = require('./helpers.js');
+
 const app = express();
 
 const expo = new Expo();
@@ -55,10 +57,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/signin', (req, res) => {
-  console.log("in signin")
   Users.findOne({ username: req.body.username })
     .then((user) => {
-      console.log('user found');
       bcrypt.compare(req.body.password, user.password, function(err, match) {
         if(err){
           console.error("Bcrypt encounterd an error comparing passwords");
@@ -69,7 +69,6 @@ app.post('/signin', (req, res) => {
             username: user.username,
             email: user.email,
           };
-          console.log('user sign in successful');
           const token = jwt.sign(tokenData, 'secret');
           res.status(201).send(token);
         }
@@ -82,21 +81,20 @@ app.post('/signin', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-  console.log(" in signup")
   //password hashing
   bcrypt.genSalt(saltRounds, function(err, salt) {
     bcrypt.hash(req.body.password, salt, function(err, hash) {
-        //bcrypt error
-        if(err){
-          console.error("Bcrypt encountered a problem hashing the password");
-        }
-        //bcrypt successful hash
-        else{
-          const tokenData = {
-            username: req.body.username,
-            password: hash,
-            email: req.body.email,
-            securityQuestion: req.body.securityQuestion,
+      //bcrypt error
+      if(err){
+        console.error("Bcrypt encountered a problem hashing the password");
+      }
+      //bcrypt successful hash
+      else{
+        const tokenData = {
+          username: req.body.username,
+          password: hash,
+          email: req.body.email,
+          securityQuestion: req.body.securityQuestion,
             securityAnswer: req.body.securityAnswer
           };
           Users.findOne({ username: req.body.username })
@@ -112,12 +110,12 @@ app.post('/signup', (req, res) => {
                     tokenData._id = createdUser._id;
                     const token = jwt.sign(tokenData, 'secret');
                     res.status(201).send(token);
-                  }
-                })
-              } else {
-                res.status(401).send('Sorry, a user with that name already exists');
-              }
-            })     
+                    }
+                  })
+                } else {
+                  res.status(401).send('Sorry, a user with that name already exists');
+                }
+              })     
         }
     });
   });
@@ -128,7 +126,6 @@ app.get('/todo', passport.authenticate('jwt', { session: false }), (req, res) =>
   const date = req.headers.date;
   Todos.find({ userId, date })
     .then((results) => {
-      // console.log(results);
       res.status(200).send(results);
     })
     .catch((err) => {
@@ -198,7 +195,6 @@ app.post('/tokens', (req, res) =>{
     for (let chunk of chunks) {
       try {
         let receipts = await expo.sendPushNotificationsAsync(chunk);
-        // console.log(receipts);
       } catch (error) {
         console.error(error);
       }
@@ -208,9 +204,6 @@ app.post('/tokens', (req, res) =>{
 });
 
 app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) => {
-  console.log('Journal route hit');
-  console.log('req.body', req.body)
-  console.log('req.user', req.user);
   const entry = new Journals({
     userId: req.user._id,
     entry: req.body.entry,
@@ -228,7 +221,6 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
         }else{
           user.completions = ++user.completions;
           user.save((err, updatedUser) =>{
-            // console.log('updated user: ', updatedUser);
             res.status(201).send(`journal entry for ${updatedUser.username} saved`);
           })
         }
@@ -238,9 +230,6 @@ app.post('/journal', passport.authenticate('jwt', {session: false}), (req, res) 
 });
 
 app.post('/exercise', passport.authenticate('jwt', {session: false}), (req, res) => {
-  console.log('Exercise Route Hit');
-  console.log('req.body: ', req.body)
-  console.log('req.user: ', req.user);
   const entry = new Exercise({
     userId: req.user._id,
     entry: req.body.entry,
@@ -251,7 +240,7 @@ app.post('/exercise', passport.authenticate('jwt', {session: false}), (req, res)
       console.error(err);
       res.status(400).send('there was an error in saving the exercise log');
     }else{
-      Users.findById(req.user._id, (err, user) =>{
+      Users.findById(req.user._id, (err, user) => {
         if(err){
           console.error(err);
           res.status(500).send(err);
@@ -268,48 +257,43 @@ app.post('/exercise', passport.authenticate('jwt', {session: false}), (req, res)
 });
 
 app.post('/water', passport.authenticate('jwt', {session: false}), (req, res) => {
-  console.log('Water Route Hit');
-  console.log('req.body: ', req.body)
-  console.log('req.user: ', req.user);
-  Water.findOne({'userID': req.user._id}, (err, water) => {
-
-  })
-  const entry = new Water({
-    userID: req.user._id,
-    entry: req.body.entry,
-    date: req.body.date.dateString,
-  });
-  entry.save((err, savedEntry) => {
-    if(err){
-      console.error(err);
-      res.status(400).send('there was an error in saving the water log');
-    }else{
-      console.log('savedEntry: ', savedEntry);
-      Users.findById(req.user._id, (err, user) =>{
+  Water.findOne({ userID: req.user._id, date: getDate() }, (err, water) => {
+    if (water) {
+      res.status(208).send(JSON.stringify(water.entry));
+    } else {
+      const entry = new Water({
+        userID: req.user._id,
+        entry: req.body.entry,
+        date: req.body.date.dateString,
+      });
+      entry.save((err, savedEntry) => {
         if(err){
           console.error(err);
-          res.status(500).send(err);
+          res.status(400).send('there was an error in saving the water log');
         }else{
-          user.completions = ++user.completions;
-          user.save((err, updatedUser) =>{
-            console.log('updated user: ', updatedUser);
-            res.status(201).send(`water entry for ${user.username} saved`);
+          Users.findById(req.user._id, (err, user) => {
+            if(err){
+              console.error(err);
+              res.status(500).send(err);
+            }else{
+              user.completions = ++user.completions;
+              user.save((err, updatedUser) => {
+                res.status(201).send(`water entry for ${user.username} saved`);
+              })
+            }
           })
         }
-      })
+      });
     }
-  });
+  })
 });
 
 app.get('/water', passport.authenticate('jwt', {session: false}), (req, res) => {
-  console.log('Get Water Route Hit');
-  console.log('req.user: ', req.user);
   Water.findOne({'userID': req.user._id}, (err, water) =>{
     if(err){
       console.error(err);
       res.send(err);
     }else{
-      console.log(water.entry);
       res.send(water);
     }
   })
@@ -320,7 +304,6 @@ app.get('/affirmations', passport.authenticate('jwt', { session: false }), (req,
     .then((results) => {
       let now = new Date();
       let dayOfTheMonth = dateFormat(now, "d");
-      // console.log(dayOfTheMonth);
       res.status(200).send(results[0].affirmations[dayOfTheMonth-1]);
     })
     .catch((err) => {
@@ -344,8 +327,7 @@ app.get('/adjectives', passport.authenticate('jwt', { session: false }), (req, r
 app.post('/checkSecurityQuestion', (req, res) => {
   Users.findOne({ email: req.body.email })
   .then((user) => {
-    console.log(user.securityQuestion, "this is question")
-      res.send(user.securityQuestion)
+    res.send(user.securityQuestion)
   })
   .catch((err) => {
     console.error(err);
@@ -356,10 +338,8 @@ app.post('/checkSecurityQuestion', (req, res) => {
 app.post('/checkSecurityAnswer', (req, res) => {
   Users.findOne({ email: req.body.email })
   .then((user) => {
-    console.log(user, req.body.answer)
     if(user.securityAnswer === req.body.answer)
     {
-      console.log("correct")
       res.send("correct")
     }
     else {
@@ -375,11 +355,9 @@ app.post('/checkSecurityAnswer', (req, res) => {
 app.post('/resetPassword', (req, res) => {
   Users.findOneAndUpdate({ email: req.body.email }, {password: req.body.newPassword}, {new: true}, function(err, user){
     if(err){
-        console.log("Something wrong when updating data!");
-        res.send("incorrect")
+      res.send("incorrect")
     }
     else if (user.password === req.body.newPassword) {
-      console.log("updated")
       res.send("updated")
     }
   });
